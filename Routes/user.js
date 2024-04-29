@@ -66,7 +66,7 @@ userRouter.post("/signup", async (req, res) => {
   }
 });
 
-userRouter.get("/login", async (req, res) => {
+userRouter.post("/login", async (req, res) => {
   try {
     let details = loginZod.safeParse(req.body);
     if (details.error) {
