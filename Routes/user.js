@@ -4,7 +4,21 @@ const { userZod, loginZod, updateZod } = require("../common/zod");
 const { paytmUser, bank } = require("../DB/mongoose");
 
 const userRouter = express.Router();
-let secretkey = process.env.SECRET_KEY;
+let secretkey = process.env.SECRET_KEY 
+
+userRouter.get("/me", authenticate, async (req, res) => {
+  try {
+    let { email } = req.headers;
+    let user = await paytmUser.findOne({ email });
+    if (user) {
+      return res
+        .status(200)
+        .json({ loggedIn: true, name: user.firstName, _id: user._id });
+    }
+  } catch (error) {
+    res.status(400).json({ error: `${error.message}` });
+  }
+});
 
 userRouter.post("/signup", async (req, res) => {
   try {
@@ -25,7 +39,14 @@ userRouter.post("/signup", async (req, res) => {
           password,
           defaultBalance,
         });
-        let token = generateToken(newUser.email, secretkey);
+        let token = generateToken(
+          {
+            email: newUser.email,
+            _id: newUser._id,
+            firstName: newUser.firstName,
+          },
+          secretkey
+        );
         await newUser.save();
         // console.log(newUser._id);
         await bank.create({
@@ -58,7 +79,14 @@ userRouter.get("/login", async (req, res) => {
         res.status(400).json({ error: "User doesn't exist" });
       } else {
         if (user.password === password) {
-          let token = generateToken(user.email, secretkey);
+          let token = generateToken(
+            {
+              email: user.email,
+              _id: user._id,
+              firstName: user.firstName,
+            },
+            secretkey
+          );
           if (token) {
             console.log(`user ${email} logged in`);
             res.status(200).json({ success: `user logged in`, token: token });

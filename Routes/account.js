@@ -8,7 +8,7 @@ const accountRouter = express.Router();
 accountRouter.use(authenticate);
 
 // Route to get account balance
-accountRouter.get("/balance", async (req, res) => {
+accountRouter.get("/balance", authenticate, async (req, res) => {
   try {
     const { email } = req.headers;
     if (!email) {
@@ -36,7 +36,7 @@ accountRouter.get("/balance", async (req, res) => {
 });
 
 // Route to transfer funds between accounts
-accountRouter.post("/transfer", async (req, res) => {
+accountRouter.post("/transfer", authenticate, async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
