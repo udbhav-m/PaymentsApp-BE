@@ -11,9 +11,13 @@ userRouter.get("/me", authenticate, async (req, res) => {
     let { email } = req.headers;
     let user = await paytmUser.findOne({ email });
     if (user) {
-      return res
-        .status(200)
-        .json({ loggedIn: true, name: user.firstName, _id: user._id });
+     return res.status(200).json({
+        loggedIn: true,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        _id: user._id,
+      });
     }
   } catch (error) {
     res.status(400).json({ error: `${error.message}` });
