@@ -12,26 +12,26 @@ accountRouter.get("/balance", authenticate, async (req, res) => {
   try {
     const { email } = req.headers;
     if (!email) {
-      res.status(400).json({ error: "Invalid user" });
+      return res.status(400).json({ error: "Invalid user" });
     }
 
     // Find the user based on the email
     let user = await paytmUser.findOne({ email });
     if (!user) {
-      res.status(400).json({ error: "Invalid user" });
+      return res.status(400).json({ error: "Invalid user" });
     }
 
     // Find the bank account associated with the user
     let account = await bank.findOne({ userId: user._id });
     if (!account) {
-      res.status(400).json({ error: "Account not found" });
+      return res.status(400).json({ error: "Account not found" });
     }
 
     // Respond with the account balance
-    res.json({ balance: account.balance });
+    return res.json({ balance: account.balance });
   } catch (error) {
     // Handle any errors and respond with an error message
-    res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: error.message });
   }
 });
 
@@ -84,11 +84,11 @@ accountRouter.post("/transfer", authenticate, async (req, res) => {
 
     // Commit the transaction if all steps are successful
     await session.commitTransaction();
-    res.status(200).json({ success: "Transaction successfull" });
+    return res.status(200).json({ success: "Transaction successfull" });
   } catch (error) {
     // End the transaction if there are any errors
     await session.abortTransaction();
-    res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: error.message });
   } finally {
     // End the session after completing the transaction
     session.endSession();

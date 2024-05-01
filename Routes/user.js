@@ -4,14 +4,14 @@ const { userZod, loginZod, updateZod } = require("../common/zod");
 const { paytmUser, bank } = require("../DB/mongoose");
 
 const userRouter = express.Router();
-let secretkey = process.env.SECRET_KEY 
+let secretkey = process.env.SECRET_KEY || "SECRETKey@1200#";
 
 userRouter.get("/me", authenticate, async (req, res) => {
   try {
     let { email } = req.headers;
     let user = await paytmUser.findOne({ email });
     if (user) {
-     return res.status(200).json({
+      return  res.status(200).json({
         loggedIn: true,
         firstName: user.firstName,
         lastName: user.lastName,
@@ -20,7 +20,7 @@ userRouter.get("/me", authenticate, async (req, res) => {
       });
     }
   } catch (error) {
-    res.status(400).json({ error: `${error.message}` });
+    return res.status(400).json({ error: `${error.message}` });
   }
 });
 
@@ -28,12 +28,12 @@ userRouter.post("/signup", async (req, res) => {
   try {
     let details = userZod.safeParse(req.body);
     if (!details.success) {
-      res.status(400).json({ error: "Invalid details" });
+      return res.status(400).json({ error: "Invalid details" });
     } else {
       let { firstName, lastName, email, password } = details.data;
       let ifExists = await paytmUser.findOne({ email: email });
       if (ifExists && ifExists != undefined) {
-        res.status(400).json({ error: "Email taken. Try another one" });
+        return res.status(400).json({ error: "Email taken. Try another one" });
       } else {
         let defaultBalance = 5000;
         let newUser = new paytmUser({
@@ -58,7 +58,7 @@ userRouter.post("/signup", async (req, res) => {
           balance: Math.floor(Math.random() * (1000 - 1 + 1) + 1),
         });
         console.log(`User ${email} created successfully`);
-        res.status(200).json({
+        return res.status(200).json({
           success: `User ${email} created successfully`,
           token: token,
         });
@@ -66,7 +66,7 @@ userRouter.post("/signup", async (req, res) => {
     }
   } catch (error) {
     console.log(error.message);
-    res.status(400).json({ error: `${error.message}` });
+    return res.status(400).json({ error: `${error.message}` });
   }
 });
 
@@ -74,13 +74,13 @@ userRouter.post("/login", async (req, res) => {
   try {
     let details = loginZod.safeParse(req.body);
     if (details.error) {
-      res.status(400).json({ error: "Invalid details" });
+      return res.status(400).json({ error: "Invalid details" });
     }
     if (details.success) {
       let { email, password } = details.data;
       let user = await paytmUser.findOne({ email });
       if (!user) {
-        res.status(400).json({ error: "User doesn't exist" });
+        return res.status(400).json({ error: "User doesn't exist" });
       } else {
         if (user.password === password) {
           let token = generateToken(
@@ -93,18 +93,18 @@ userRouter.post("/login", async (req, res) => {
           );
           if (token) {
             console.log(`user ${email} logged in`);
-            res.status(200).json({ success: `user logged in`, token: token });
+            return res.status(200).json({ success: `user logged in`, token: token });
           } else {
-            res.status(400).json({ error: "error while setting up token" });
+            return res.status(400).json({ error: "error while setting up token" });
           }
         } else {
-          res.status(401).json({ error: "Password incorrect" });
+          return res.status(401).json({ error: "Password incorrect" });
         }
       }
     }
   } catch (error) {
     console.log(error.message);
-    res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: error.message });
   }
 });
 
@@ -113,13 +113,13 @@ userRouter.put("/update", authenticate, async (req, res) => {
     let email = req.headers.email;
     let { success } = updateZod.safeParse(req.body);
     if (!success) {
-      res.status(400).json({ error: "Invalid details provided" });
+      return res.status(400).json({ error: "Invalid details provided" });
     }
     await paytmUser.findOneAndUpdate({ email }, req.body);
     console.log("user details updated");
-    res.status(200).json({ success: `details updated for user ${email}` });
+    return res.status(200).json({ success: `details updated for user ${email}` });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: error.message });
   }
 });
 
@@ -128,18 +128,30 @@ userRouter.get("/search", authenticate, async (req, res) => {
     let { filter } = req.query;
     let { email } = req.headers;
     if (!filter) {
-      res.send(400).json({ error: "Invalid query" });
+      return res.status(400).json({ error: "Invalid query" });
     }
-    let users = await paytmUser.find({
-      $or: [
-        { firstName: { $regex: filter, $options: "i" } },
-        { lastName: { $regex: filter, $options: "i" } },
-      ],
-    });
-    if (!users) {
-      res.send(400).json({ error: "No users found" });
-    }
+    let users = [];
     let finalObj = [];
+    if (filter.includes(" ")) {
+      const [firstName, lastName] = filter.split(" ");
+
+      users = await paytmUser.find({
+        firstName: { $regex: firstName, $options: "i" },
+        lastName: { $regex: lastName, $options: "i" },
+      });
+    } else {
+      users = await paytmUser.find({
+        $or: [
+          { firstName: { $regex: filter, $options: "i" } },
+          { lastName: { $regex: filter, $options: "i" } },
+        ],
+      });
+    }
+
+    if (!users) {
+      return res.status(400).json({ error: "No users found" });
+    }
+
     users.map((each) => {
       if (each.email != email) {
         let temp = {
@@ -153,9 +165,9 @@ userRouter.get("/search", authenticate, async (req, res) => {
     });
 
     console.log(finalObj);
-    res.status(200).json({ users: finalObj });
+    return res.status(200).json({ users: finalObj });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: error.message });
   }
 });
 
