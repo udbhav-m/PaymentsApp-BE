@@ -9,7 +9,7 @@ app.use(express.json());
 app.use(cors());
 
 // sends all user requests to user router
-app.get("/", (req, res) => res.send("Express on Vercel"));
+app.get("/", (_, res) => res.send("Express on Vercel"));
 app.use("/api/v1/user", userRouter);
 app.use("/api/v1/account", accountRouter);
 

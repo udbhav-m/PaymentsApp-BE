@@ -30,18 +30,17 @@ userRouter.post("/signup", async (req, res) => {
     if (!details.success) {
       return res.status(400).json({ error: "Invalid details" });
     } else {
-      let { firstName, lastName, email, password } = details.data;
+      let { firstName, lastName, email, password, pin } = details.data;
       let ifExists = await paytmUser.findOne({ email: email });
       if (ifExists && ifExists != undefined) {
         return res.status(400).json({ error: "Email taken. Try another one" });
       } else {
-        let defaultBalance = 5000;
         let newUser = new paytmUser({
           firstName,
           lastName,
           email,
           password,
-          defaultBalance,
+          pin,
         });
         let token = generateToken(
           {
@@ -52,7 +51,7 @@ userRouter.post("/signup", async (req, res) => {
           secretkey
         );
         await newUser.save();
-        // console.log(newUser._id);
+
         await bank.create({
           userId: newUser,
           balance: Math.floor(Math.random() * (1000 - 1 + 1) + 1),

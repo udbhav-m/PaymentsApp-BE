@@ -40,6 +40,7 @@ accountRouter.post("/transfer", authenticate, async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
+    let { toId, amount, pin } = req.body;
     // Find the sender user based on the email
     let from = await paytmUser
       .findOne({ email: req.headers.email })
@@ -47,8 +48,10 @@ accountRouter.post("/transfer", authenticate, async (req, res) => {
     if (!from) {
       throw new Error("User not found");
     }
+    if (pin !== from.pin) {
+      throw new Error("Invalid PIN");
+    }
     let fromId = from._id;
-    let { toId, amount } = req.body;
 
     if (typeof toId !== "string" || typeof amount !== "number" || amount < 1) {
       throw new Error("Invalid data for toId or amount");

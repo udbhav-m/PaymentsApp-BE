@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-let secretkey = process.env.SECRET_KEY;
+let secretkey = process.env.SECRET_KEY || "SECRETKey@1200#";
 
 const generateToken = (dataJson, key) => {
   let token = jwt.sign(dataJson, key);

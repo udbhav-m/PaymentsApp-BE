@@ -16,6 +16,9 @@ const userZod = z.object({
   password: z.string().refine((value) => {
     return value.trim().length > 6;
   }),
+  pin: z.number().refine((value) => {
+    return value.trim().length == 4;
+  }),
 });
 
 const loginZod = z.object({
